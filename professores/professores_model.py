@@ -1,7 +1,3 @@
-from flask import Blueprint, request, jsonify
-
-professores_blueprint = Blueprint("professores", __name__)
-
 dados = {
     "professores": [
         {
@@ -46,31 +42,37 @@ dados = {
         ]
     }
 
-def getTodosProfessores():
-  return jsonify(dados["professores"])
+class criarProfessorErro(Exception):
+    def __init__(self, mensagem):
+        super().__init__(mensagem)
+        self.mensagem = mensagem
 
-def criarProfessor():
-    dados = request.get_json()
+class ProfessorNaoEncontrado(Exception):
+    pass
+
+def getTodosProfessores():
+  return dados["professores"]
+
+def criarProfessor(dados):
     for key, value in dados.items():
         if(not value):
-          return jsonify({"mensagem": f"O campo '{key}' é obrigatório e deve estar preenchido."}), 400
-    return jsonify(dados)
+          raise criarProfessorErro(f"O campo '{key}' é obrigatório e deve estar preenchido.")
+    return dados
 
 def getPorIdProfessor(idProfessor):
     for professor in dados['professores']:
         if professor['id'] == idProfessor:
-            return jsonify(professor)
-    return jsonify(None), 204
+            return professor
+    raise ProfessorNaoEncontrado
 
-def attProfessor(idProfessor):
-    professor = request.get_json()
+def attProfessor(idProfessor, novoProfessor):
     for i in range (0,len(dados['professores'])):
         if dados['professores'][i]['id'] == idProfessor:
             professor_desatualizado = dados['professores'][i] 
-            professor_att = merge_dicts(professor_desatualizado,professor)
+            professor_att = merge_dicts(professor_desatualizado,novoProfessor)
             dados['professores'][i] = professor_att
-            return jsonify(professor_att)
-    return jsonify(None), 400
+            return professor_att
+    raise ProfessorNaoEncontrado
 
 def merge_dicts(dict1, dict2):
     merged = dict1.copy()  
@@ -87,5 +89,5 @@ def deletarProfessor(idProfessor):
         if professor['id'] == idProfessor:
             id_para_remover = idProfessor
             dados['professores'] = [prof for prof in dados['professores'] if prof['id'] != id_para_remover]
-            return jsonify(professor)
-    return jsonify(None), 400
+            return professor
+    raise ProfessorNaoEncontrado
